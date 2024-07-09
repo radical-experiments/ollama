@@ -1,0 +1,51 @@
+
+
+# Setup
+
+  - use `./get_ollama` to install ollama in user space
+  - to run an experiment
+    - `export OLLAMA_NUM_PARALLEL=32`
+    - `export OLLAMA_MAX_QUEUE=1024`
+    - `./ollama serve`
+  - on a different shell, run the client(s):
+
+    - `curl http://localhost:11434/api/generate -d '{ "model": "llama3:latest", "prompt": "hi","stream": false}'`
+
+  - for RP based experiments, run `./test.py` as driver which uses `./client.py`
+    as client tasks
+
+Note that the RP experiments require the `ollama` module installed in the
+virtualenv the client task is running in.
+
+
+# Results:
+
+## Frontier:
+
+  - running ollama on CPUs only does not seem to yield any scaling behavior
+    whatsoever: after initial warmup, query response times are constant (but
+    noisy).
+  - GPU utilization on Frontier requires the `rocm/6.0.0` module to be loaded,
+    and requires the allocation to use `--gres=gpu:8` to obtain correct
+    permissions.  Ollama then 'sees' the GPUs - however, it hangs when trying to
+    use them.
+    - support suggested to use `module load craype-accel-amd-gfx90a` (TODO AM:
+      test)
+
+
+## Polaris:
+
+  - GPUs are being used out of the box, plots for initial runs are under
+    `polaris/`.
+  - We cannot determine what portion of a query response time is spent in the
+    Ollama wait queue, and what portion is spent in the model.  TODO:
+    investigate Ollama profiling.
+  - The current plots do not yet take warmup into account.
+  - TODO: query rate plots over time (`exec_stop` events)
+
+
+## RP integration
+
+  - the branch `feature/service_startup_2` simplifies agent service deployment
+    and integration.
+
