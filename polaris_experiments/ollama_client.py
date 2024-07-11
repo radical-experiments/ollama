@@ -52,6 +52,7 @@ def main(num_prompts=None):
     for idx, prompt in enumerate(prompts):
         prof.prof('ollama_prompt_start', uid=uid)
         res = ollama.invoke(prompt)
+        res = res.replace('\n', '-')
         msg = f'prompt:{idx}|||{len(res)}|||{res}'
         print(msg)
         prof.prof('ollama_prompt_stop', uid=uid, msg=msg)
