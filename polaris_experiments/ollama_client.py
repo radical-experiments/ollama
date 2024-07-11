@@ -49,10 +49,12 @@ def main(num_prompts=None):
     prof.prof('ollama_init_stop', uid=uid)
 
     prof.prof('ollama_req_start', uid=uid)
-    for prompt in prompts:
+    for idx, prompt in enumerate(prompts):
         prof.prof('ollama_prompt_start', uid=uid)
-        print(ollama.invoke(prompt))
-        prof.prof('ollama_prompt_stop', uid=uid)
+        res = ollama.invoke(prompt)
+        msg = f'prompt:{idx}|||{len(res)}|||{res}'
+        print(msg)
+        prof.prof('ollama_prompt_stop', uid=uid, msg=msg)
     prof.prof('ollama_req_stop', uid=uid)
 
 
