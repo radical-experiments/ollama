@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 # cd ~/ollama
 # source ve/bin/activate
