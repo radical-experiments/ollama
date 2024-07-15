@@ -1,19 +1,29 @@
 #!/usr/bin/env python3
 
-import time
 import radical.pilot as rp
+
+BASE   = '/home/merzky/j/ollama'
+OLLAMA = '%s/ollama'                % BASE
+CLIENT = '%s/test_ollama_client.py' % BASE
+
+N_NODES               = 2
+OLLAMA_RANKS_PER_NODE = 1
+OLLAMA_GPUS_PER_RANK  = 1
+
+CLIENTS_PER_NODE      = 1
+RANKS_PER_CLIENT      = 2
+THREADS_PER_CLIENT    = 1
 
 
 if __name__ == '__main__':
 
     session = rp.Session()
     try:
-
         pmgr  = rp.PilotManager(session=session)
         tmgr  = rp.TaskManager(session=session)
         pdesc = rp.PilotDescription({'resource': 'local.localhost',
                                      'runtime' : 1024 * 1024,
-                                     'nodes'   : 10})
+                                     'nodes'   : N_NODES})
         pilot = pmgr.submit_pilots(pdesc)
         tmgr.add_pilots(pilot)
 
@@ -24,45 +34,46 @@ if __name__ == '__main__':
       #                                 })
 
         # ollama instances need ports assigned manually
-        port = 11000
-        host = 'localhost'
-        sds  = list()
-        for i in range(2):
-            pat   = '.*Listening on ([0-9:\\.]*).*'
-            sd    = rp.TaskDescription(
-                    {'uid'         : 'ollama_%03d' % i,
-                     'mode'        : rp.TASK_SERVICE,
-                     'executable'  : '/home/merzky/j/ollama/ollama',
-                     'arguments'   : ['start'],
-                     'environment' : {'OLLAMA_HOST': '%s:%s' % (host, port)},
-                     'timeout'     : 10,  # startup timeout
-                     'info_pattern': 'stderr:%s' % pat,
-                     'named_env'   : 'rp'})
-            sds.append(sd)
-            port += 1
+        getip = 'python3 -c "import radical.utils as ru; print(ru.get_hostip())"'
+        pat   = '.*Listening on ([0-9:\\.]*).*'
+        od    = rp.TaskDescription(
+                {'uid'          : 'ollama',
+                 'mode'         : rp.TASK_SERVICE,
+                 'executable'   : OLLAMA,
+                 'arguments'    : ['serve'],
+                 'ranks'        : OLLAMA_RANKS_PER_NODE * N_NODES,
+                 'gpus_per_rank': OLLAMA_GPUS_PER_RANK,
+                 'pre_exec'     : [
+                     'hostip=$(%s)' % getip,
+                     'hostport=$((11000 + $RP_RANK))',
+                     'export OLLAMA_HOST=$hostip:$hostport',
+                     'echo $RP_RANK:$OLLAMA_HOST'],
+                 'info_pattern' : 'stderr:%s' % pat,
+                 'timeout'      : 10,  # startup timeout
+                 'named_env'    : 'rp'})
+        ollama = tmgr.submit_tasks(od)
 
-        ollamas = tmgr.submit_tasks(sds)
-
-        for task in ollamas:
-            print(task.uid, task.wait_info())
+        info = ollama.wait_info()
+        urls = ','.join(info.values())
+        print(urls)
+        assert False
 
         pat = 'Running on (.*)'
         td = rp.TaskDescription({'uid'         : 'load_balancer',
                                  'mode'        : rp.TASK_SERVICE,
                                  'executable'  : 'radical-pilot-http-balancer',
-                                 'arguments'   : [o.info for o in ollamas],
+                                 'arguments'   : [ollama.info],
                                  'info_pattern': 'stderr:%s' % pat,
                                  'timeout'     : 10,
                                  'named_env'   : 'rp'})
         balancer = tmgr.submit_tasks(td)
         print(balancer.uid, balancer.wait_info())
 
-        n   = 2
         tds = list()
-        for _ in range(n):
-            td  = rp.TaskDescription({'executable' : '/home/merzky/j/rp/ollama_client.py',
+        for _ in range(CLIENTS_PER_NODE * N_NODES):
+            td  = rp.TaskDescription({'executable' : CLIENT,
                                       'services'   : [balancer.uid],
-                                      'ranks'      : 1,
+                                      'ranks'      : RANKS_PER_CLIENT,
                                       'named_env'  : 'rp'})
             tds.append(td)
 
