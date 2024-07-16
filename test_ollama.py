@@ -6,29 +6,22 @@ import time
 import radical.pilot as rp
 
 BASE   = '/home/merzky/j/ollama'
+
 OLLAMA = '%s/ollama'                % BASE
 CLIENT = '%s/test_ollama_client.py' % BASE
 
-# N_NODES                = 2
-# OLLAMAS_PER_NODE       = 1
-# OLLAMA_GPUS_PER_RANK   = 1
+N_NODES                   = 2
+OLLAMAS_PER_NODE          = 2
+OLLAMA_GPUS_PER_RANK      = 2
+
+CLIENTS_PER_NODE          = 2
+CLIENT_RANKS_PER_NODE     = 2
+CLIENT_THREADS_PER_RANK   = 2
+CLIENT_PROMPTS_PER_THREAD = 1024
+
+
+# ------------------------------------------------------------------------------
 #
-# CLIENTS_PER_NODE       = 1
-# CLIENT_RANKS_PER_NODE  = 1
-# THREADS_PER_CLIENT     = 1
-# PROMPTS_PER_THREAD     = 2
-
-
-N_NODES                = 2
-OLLAMAS_PER_NODE       = 1
-OLLAMA_GPUS_PER_RANK   = 1
-
-CLIENTS_PER_NODE       = 2
-CLIENT_RANKS_PER_NODE  = 1
-THREADS_PER_CLIENT     = 2
-PROMPTS_PER_THREAD     = 2
-
-
 def print(msg):
     sys.stdout.write('%.2f %s\n' % (time.time(), msg))
     sys.stdout.flush()
@@ -46,12 +39,16 @@ if __name__ == '__main__':
         pilot = pmgr.submit_pilots(pdesc)
         tmgr.add_pilots(pilot)
 
+        # ---------------------------------------------------------------------
+        # prepare the OLLAMA environment
       # pilot.prepare_env('ollama_env', {'type'    : 'venv',
       #                                  'path'    : '/tmp/ve_ollama',
       #                                  'setup'   : ['ollama', 'radical.pilot',
       #                                               '/home/merzky/j/rp'],
       #                                 })
 
+        # ---------------------------------------------------------------------
+        # start OLLAMA instances
         # ollama instances need ports assigned manually
         ods = list()
         for i in range(N_NODES * OLLAMAS_PER_NODE):
@@ -74,6 +71,8 @@ if __name__ == '__main__':
             ods.append(od)
 
         ollamas = tmgr.submit_tasks(ods)
+
+        # collect the endpoint URLs
         urls    = list()
         for ollama in ollamas:
             info = ollama.wait_info()
@@ -82,6 +81,8 @@ if __name__ == '__main__':
 
         print('ollama urls: %s' % urls)
 
+        # ---------------------------------------------------------------------
+        # start the load balancer
         pat = 'Running on (.*)'
         td = rp.TaskDescription({'uid'         : 'load_balancer',
                                  'mode'        : rp.TASK_SERVICE,
@@ -93,20 +94,23 @@ if __name__ == '__main__':
         balancer = tmgr.submit_tasks(td)
         print('%s %s' % (balancer.uid, balancer.wait_info()))
 
+        # ---------------------------------------------------------------------
+        # start the clients (uses `load_balancer` service env
         tds = list()
         for _ in range(CLIENTS_PER_NODE * N_NODES):
             td  = rp.TaskDescription({'executable' : CLIENT,
                                       'services'   : [balancer.uid],
                                       'ranks'      : CLIENT_RANKS_PER_NODE,
-                                      'arguments'  : [THREADS_PER_CLIENT,
-                                                      PROMPTS_PER_THREAD],
+                                      'arguments'  : [CLIENT_THREADS_PER_RANK,
+                                                      CLIENT_PROMPTS_PER_THREAD],
                                       'named_env'  : 'rp'})
             tds.append(td)
 
         tasks = tmgr.submit_tasks(tds)
         tmgr.wait_tasks(uids=[t.uid for t in tasks])
 
-
+        # ---------------------------------------------------------------------
+        # print some stats
         for task in tasks:
             print('STDOUT: %s' % task.stdout)
             print('STDERR: %s' % task.stderr)

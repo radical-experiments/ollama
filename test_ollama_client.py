@@ -41,7 +41,7 @@ def work(tid):
         for i in range(n_requests):
             print('req %d: %d' % (i, len(prompt['content'])))
             prof.prof('request_start', uid=tid, msg='request_%06d' % i)
-            response = client.chat(model='llama3', messages=[prompt])
+            response = client.chat(model='qwen2:0.5b', messages=[prompt])
             rep = response['message']['content']
             print('res %d: %d' % (i, len(rep)))
             prof.prof('request_stop', uid=tid, msg='request_%06d' % i)
