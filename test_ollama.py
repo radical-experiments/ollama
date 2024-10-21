@@ -10,14 +10,14 @@ BASE   = '/home/merzky/j/ollama'
 OLLAMA = '%s/ollama'                % BASE
 CLIENT = '%s/test_ollama_client.py' % BASE
 
-N_NODES                   = 2
-OLLAMAS_PER_NODE          = 2
-OLLAMA_GPUS_PER_RANK      = 2
+N_NODES                   =  1
+OLLAMAS_PER_NODE          =  1
+OLLAMA_GPUS_PER_RANK      =  1
 
-CLIENTS_PER_NODE          = 2
-CLIENT_RANKS_PER_NODE     = 2
-CLIENT_THREADS_PER_RANK   = 2
-CLIENT_PROMPTS_PER_THREAD = 1024
+CLIENTS_PER_NODE          =  1
+CLIENT_RANKS_PER_NODE     =  1
+CLIENT_THREADS_PER_RANK   =  1
+CLIENT_PROMPTS_PER_THREAD = 10
 
 
 # ------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         print('%s %s' % (balancer.uid, balancer.wait_info()))
 
         # ---------------------------------------------------------------------
-        # start the clients (uses `load_balancer` service env
+        # start the clients (uses `load_balancer` service env)
         tds = list()
         for _ in range(CLIENTS_PER_NODE * N_NODES):
             td  = rp.TaskDescription({'executable' : CLIENT,

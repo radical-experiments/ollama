@@ -34,16 +34,16 @@ def work(tid):
     prompt = {'role'   : 'user',
               'stream' : False,
               'content': 'echo "Hello, World!"'}
+    model  = 'gw2:0.5b'
 
     print('thread client: %s [%s]' % (client, url))
 
+    # run one probe request to load the model
     try:
         for i in range(n_requests):
-            print('req %d: %d' % (i, len(prompt['content'])))
+            print('req %d' % i)
             prof.prof('request_start', uid=tid, msg='request_%06d' % i)
-            response = client.chat(model='qwen2:0.5b', messages=[prompt])
-            rep = response['message']['content']
-            print('res %d: %d' % (i, len(rep)))
+            client.chat(model=model, messages=[prompt])
             prof.prof('request_stop', uid=tid, msg='request_%06d' % i)
 
     except Exception as e:
