@@ -162,7 +162,10 @@ def plot_scaling():
             if annotated:
                 annotated = c_name
 
-        ax.set_title('scaling (%s)' % plot_filter, loc='center')
+        title = 'scaling (%s)' % plot_filter
+        plt.suptitle(title, y=1.02, fontsize=12)
+        plt.title('one line per [n] service instances', fontsize=8)
+
         ax.legend(patches, labels)
         ax.set_yscale('log')
         plt.xlabel('n_clients')
@@ -175,8 +178,6 @@ def plot_scaling():
             fig2, ax2   = plt.subplots(figsize = ra.get_plotsize(300))
             patches   = list()
             labels    = list()
-
-            pprint.pprint(bundles)
 
             local_data  = list()
             remote_data = list()
@@ -193,9 +194,6 @@ def plot_scaling():
                         remote_data.append(dat)
                         break
 
-            pprint.pprint(local_data)
-            pprint.pprint(remote_data)
-
             ax2.plot([x[0] for x in local_data],
                      [x[1] for x in local_data],
                      '-o', color=c_colors['local_noop'],
@@ -205,16 +203,49 @@ def plot_scaling():
                      '-o', color=c_colors['remote_noop'],
                            label='remote_noop')
 
-            ax2.set_title('weak scaling (%s)' % plot_filter, loc='center')
+            title = 'weak scaling (%s)' % plot_filter
+            plt.suptitle(title, y=1.02, fontsize=12)
+            plt.title('n_services == 1', fontsize=8)
+
             ax2.legend()
             ax2.set_yscale('log')
             plt.xlabel('n_clients')
             plt.ylabel('rate (\\#req/s)')
             fig2.savefig('weak_scaling_%s.png' % plot_filter, bbox_inches='tight')
-            sys.exit()
 
 
 
+            fig3, ax3   = plt.subplots(figsize = ra.get_plotsize(300))
+            patches   = list()
+            labels    = list()
+
+            local_data  = list()
+            remote_data = list()
+
+            for dat in bundles['local_noop'][1]:
+                local_data.append(dat)
+
+            for dat in bundles['remote_noop'][1]:
+                remote_data.append(dat)
+
+            ax3.plot([x[0] for x in local_data],
+                     [x[1] for x in local_data],
+                     '-o', color=c_colors['local_noop'],
+                           label='local_noop')
+            ax3.plot([x[0] for x in remote_data],
+                     [x[1] for x in remote_data],
+                     '-o', color=c_colors['remote_noop'],
+                           label='remote_noop')
+
+            title = 'strong scaling (%s)' % plot_filter
+            plt.suptitle(title, y=1.02, fontsize=12)
+            plt.title('n_services == n_clients', fontsize=8)
+
+            ax3.legend()
+            ax3.set_yscale('log')
+            plt.xlabel('n_clients')
+            plt.ylabel('rate (\\#req/s)')
+            fig3.savefig('strong_scaling_%s.png' % plot_filter, bbox_inches='tight')
 
 
 # ------------------------------------------------------------------------------
