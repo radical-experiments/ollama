@@ -93,7 +93,7 @@ def plot_scaling():
 
   # pprint.pprint(data)
 
-    # first plots: strong scaling:
+    # first plots: scaling:
     #   - one plot per noop / llama
     #   - n_servers = variable
     #   - x-axis: n_servers
@@ -105,10 +105,11 @@ def plot_scaling():
 
     for plot_filter in ['noop', 'llama', 'local', 'remote']:
 
-        bundles = defaultdict(dict)
-        fig, ax = plt.subplots(figsize=ra.get_plotsize(300))
-        patches = list()
-        labels  = list()
+        bundles   = defaultdict(dict)
+        fig, ax   = plt.subplots(figsize = ra.get_plotsize(300))
+        patches   = list()
+        labels    = list()
+        annotated = None
 
       # print(plot_filter)
         plot_data = defaultdict(dict)
@@ -143,22 +144,32 @@ def plot_scaling():
                 # annotate with n_clients
                 last = bundles[c_name][sc][-1]
                 if c_name not in ['remote_noop', 'local_noop']:
-                    ax.annotate('   %4d' % sc, (last[0], last[1]), fontsize=10,
-                                xytext=(10, 0), textcoords='offset points',)
+                    if      annotated \
+                        and annotated is not True \
+                        and 'llama' in annotated \
+                        and 'llama' in c_name:
+                        pass
+                    else:
+                        annotated = True
+                        ax.annotate('   %4d' % sc, (last[0], last[1]), fontsize=10,
+                                    xytext=(10, 0), textcoords='offset points',)
 
             patch = Line2D([0], [0], color=c_colors[c_name],
                            linewidth=3, linestyle='-')
             patches.append(patch)
-            labels.append(c_name)
+            labels.append(c_name.replace('_', ' '))
+
+            if annotated:
+                annotated = c_name
 
       # pprint.pprint(bundles)
 
-        ax.set_title('strong scaling (%s)' % plot_filter, loc='center')
+        ax.set_title('scaling (%s)' % plot_filter, loc='center')
         ax.legend(patches, labels)
         ax.set_yscale('log')
         plt.xlabel('n_clients')
         plt.ylabel('rate (\\#req/s)')
-        fig.savefig('strong_scaling_%s.png' % plot_filter)
+        fig.savefig('scaling_%s.png' % plot_filter, bbox_inches='tight')
 
 
 # ------------------------------------------------------------------------------
