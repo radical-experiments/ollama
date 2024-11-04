@@ -162,14 +162,59 @@ def plot_scaling():
             if annotated:
                 annotated = c_name
 
-      # pprint.pprint(bundles)
-
         ax.set_title('scaling (%s)' % plot_filter, loc='center')
         ax.legend(patches, labels)
         ax.set_yscale('log')
         plt.xlabel('n_clients')
         plt.ylabel('rate (\\#req/s)')
         fig.savefig('scaling_%s.png' % plot_filter, bbox_inches='tight')
+
+
+        if plot_filter in ['noop']:
+
+            fig2, ax2   = plt.subplots(figsize = ra.get_plotsize(300))
+            patches   = list()
+            labels    = list()
+
+            pprint.pprint(bundles)
+
+            local_data  = list()
+            remote_data = list()
+
+            for i in bundles['local_noop']:
+                for dat in bundles['local_noop'][i]:
+                    if dat[0] == i:
+                        local_data.append(dat)
+                        break
+
+            for i in bundles['remote_noop']:
+                for dat in bundles['remote_noop'][i]:
+                    if dat[0] == i:
+                        remote_data.append(dat)
+                        break
+
+            pprint.pprint(local_data)
+            pprint.pprint(remote_data)
+
+            ax2.plot([x[0] for x in local_data],
+                     [x[1] for x in local_data],
+                     '-o', color=c_colors['local_noop'],
+                           label='local_noop')
+            ax2.plot([x[0] for x in remote_data],
+                     [x[1] for x in remote_data],
+                     '-o', color=c_colors['remote_noop'],
+                           label='remote_noop')
+
+            ax2.set_title('weak scaling (%s)' % plot_filter, loc='center')
+            ax2.legend()
+            ax2.set_yscale('log')
+            plt.xlabel('n_clients')
+            plt.ylabel('rate (\\#req/s)')
+            fig2.savefig('weak_scaling_%s.png' % plot_filter, bbox_inches='tight')
+            sys.exit()
+
+
+
 
 
 # ------------------------------------------------------------------------------
