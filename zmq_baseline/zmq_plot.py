@@ -43,7 +43,7 @@ if __name__ == '__main__':
     session = ra.Session.create(src, stype)
 
     # FIXME: adaptive sampling (100 bins over range?)
-    data = {metric: session.rate(event=metrics[metric], sampling=1.0)
+    data = {metric: session.rate(event=metrics[metric], sampling=4.0)
             for metric in metrics}
 
     fig, ax = plt.subplots(figsize=ra.get_plotsize(500))

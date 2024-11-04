@@ -1,23 +1,36 @@
 
-export N_NODES=10
-export ZMQ_SERVICES=001
-export ZMQ_CLIENTS=016
-export ZMQ_KREQUESTS=$((0128))
-export ZMQ_DELAY_MS=0000
+mkdir -p $CAMPAIGN
 
-export SID="s$ZMQ_SERVICES.c$ZMQ_CLIENTS.r$ZMQ_KREQUESTS.d$ZMQ_DELAY_MS"
-export PFILE="zmq_base_${SID}.prof"
-export XFILE="zmq_base_${SID}_rate.png"
+export SID="$CAMPAIGN.s$ZMQ_SERVICES.c$ZMQ_CLIENTS.r$ZMQ_REQUESTS.d$ZMQ_DELAY_MS"
+export PFILE="$CAMPAIGN/zmq_base_${SID}.prof"
+export XFILE="$CAMPAIGN/zmq_base_${SID}_rate.png"
 
-rp_kill
-killall python3
-rm -rf *.log rp.session.*
-make install-ve
-./zmq_prof.py
-ff radical.zmq.prof | grep rp.session
-ff radical.zmq.prof | grep rp.session | xargs cat | sort -un > $PFILE
-wc -l $PFILE
-./zmq_plot.py $PFILE
-sxiv $XFILE &
-ls -la $PFILE $XFILE
+# skip if xfile exists
+if ! test -f $PFILE; then
+    rp_kill
+    killall python3
+    rm -rf *.log rp.session.*
 
+    # make install-ve
+    echo "========================================================================="
+    echo "sid $SID"
+
+    ./zmq_prof.py
+    rm *.log
+
+    ff radical.zmq.prof | grep rp.session
+    ff radical.zmq.prof | grep rp.session | xargs cat | sort -un > $PFILE
+    wc -l $PFILE
+
+fi
+
+# if ! test -f $XFILE; then
+if true; then
+    ./zmq_plot.py $PFILE
+  # sxiv $XFILE &
+  # ls -la $PFILE $XFILE
+  # ls -la $PFILE $XFILE
+    echo "sid $SID"
+    echo "========================================================================="
+
+fi
