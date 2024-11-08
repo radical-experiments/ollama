@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import random
+import ollama
 
 import numpy as np
 
@@ -87,6 +88,8 @@ def app():
 #
 def service(port):
 
+    use_traces = True
+
     uid  = os.environ.get('RP_TASK_ID')
     url  = os.environ.get('OLLAMA_URL')
     prof = ru.Profiler('radical.zmq')
@@ -108,7 +111,7 @@ def service(port):
 
     else:
 
-        client = ollama.Client(host=url)
+        oll_ep = ollama.Client(host=url)
         prompt = {'role'   : 'user',
                   'stream' : False,
                   'content': 'echo "Hello, World!"'}
@@ -122,7 +125,7 @@ def service(port):
             time.sleep(delay)
         else:
             start = time.time()
-            client.chat(model=model, messages=[prompt])
+            oll_ep.chat(model='llama-8b', messages=[prompt])
             delay = time.time() - start
 
         ret = 'hello %s: %7.2f' % (arg, delay)

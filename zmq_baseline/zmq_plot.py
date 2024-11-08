@@ -62,6 +62,7 @@ def plot_rates(src):
 
     ax.set_title(sid + ' rate', loc='center')
     ax.legend(to_latex(list(data.keys())))
+    ax.set_ylim(bottom=0)
     # FIXME: why is the x-axis label gone?
     plt.xlabel(to_latex('time [s]'))
     plt.ylabel(to_latex('rate (#requests / sec)'))
@@ -257,7 +258,8 @@ if __name__ == '__main__':
             print(src)
             plot_rates(src)
 
-    plot_scaling()
+    else:
+        plot_scaling()
 
 
 # ------------------------------------------------------------------------------
