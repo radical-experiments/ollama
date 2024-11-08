@@ -87,31 +87,44 @@ def app():
 #
 def service(port):
 
-
-    if r_delay:
-        seed = iter([r_delay])
-
-    else:
-        def get_seed():
-
-            rgen  = np.random.default_rng()
-            seeds = rgen.normal(4.44, 0.55, size=5_000)
-
-            while True:
-                seed = max(random.choice(seeds), 2.22)
-                yield float(seed)
-
-        seed = get_seed()
-
-    print('seed for %s: %s' %(r_delay, type(seed)))
-
-    uid  = os.environ['RP_TASK_ID']
+    uid  = os.environ.get('RP_TASK_ID')
+    url  = os.environ.get('OLLAMA_URL')
     prof = ru.Profiler('radical.zmq')
 
+    assert uid, 'must run as RP task'
+
+    if use_traces:
+
+        if r_delay:
+            seed = iter([r_delay])
+        else:
+            def get_seed():
+                rgen  = np.random.default_rng()
+                seeds = rgen.normal(4.44, 0.55, size=5_000)
+                while True:
+                    seed = max(random.choice(seeds), 2.22)
+                    yield float(seed)
+            seed = get_seed()
+
+    else:
+
+        client = ollama.Client(host=url)
+        prompt = {'role'   : 'user',
+                  'stream' : False,
+                  'content': 'echo "Hello, World!"'}
+
     def hello(arg: str) -> str:
+
         prof.prof('hello_start', uid=uid)
-        delay = next(seed)
-        time.sleep(delay)
+
+        if use_traces:
+            delay = next(seed)
+            time.sleep(delay)
+        else:
+            start = time.time()
+            client.chat(model=model, messages=[prompt])
+            delay = time.time() - start
+
         ret = 'hello %s: %7.2f' % (arg, delay)
         prof.prof('hello_stop',  uid=uid)
         return ret
