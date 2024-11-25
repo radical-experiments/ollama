@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 __copyright__ = 'Copyright 2013-2016, http://radical.rutgers.edu'
 __license__   = 'MIT'
@@ -65,7 +65,7 @@ def plot_rates(src):
     ax.set_ylim(bottom=0)
     # FIXME: why is the x-axis label gone?
     plt.xlabel(to_latex('time [s]'))
-    plt.ylabel(to_latex('rate (#requests / sec)'))
+    plt.ylabel(to_latex('rate (#inferences / sec)'))
 
     fig.savefig('%s_rate.png' % sid)
 
@@ -80,7 +80,7 @@ def plot_scaling():
     idx_t = 3
 
 
-    # data elements: campaign, n_servers, n_clients, n_requests, duration, rate
+    # data elements: campaign, n_servers, n_tasks, n_requests, duration, rate
 
     data = list()
     with open('zmq_stats.dat', 'r') as fin:
@@ -99,7 +99,7 @@ def plot_scaling():
     #   - n_servers = variable
     #   - x-axis: n_servers
     #   - y-axis: rate
-    #   - one line per n_clients
+    #   - one line per n_tasks
     #   - one color per campaign
 
     c_names = set([str(x[0]) for x in data])
@@ -142,7 +142,7 @@ def plot_scaling():
                         '-o',
                         color=c_colors[c_name])
                       # label='%s (%d servers)' % (c_name, sc))
-                # annotate with n_clients
+                # annotate with n_tasks
                 last = bundles[c_name][sc][-1]
                 if c_name not in ['remote_noop', 'local_noop']:
                     if      annotated \
@@ -152,8 +152,9 @@ def plot_scaling():
                         pass
                     else:
                         annotated = True
-                        ax.annotate('   %4d' % sc, (last[0], last[1]), fontsize=10,
-                                    xytext=(10, 0), textcoords='offset points',)
+                        ax.annotate('   %4d services' % sc, (last[0], last[1]),
+                                    fontsize=10, xytext=(10, 0),
+                                    textcoords='offset points',)
 
             patch = Line2D([0], [0], color=c_colors[c_name],
                            linewidth=3, linestyle='-')
@@ -163,15 +164,15 @@ def plot_scaling():
             if annotated:
                 annotated = c_name
 
-        title = 'scaling (%s)' % plot_filter
-        plt.suptitle(title, y=1.02, fontsize=12)
-        plt.title('one line per [n] service instances', fontsize=8)
+      # title = 'scaling'  #  (%s)' % plot_filter
+      # plt.suptitle(title, y=1.02, fontsize=12)
+      # plt.title('one line per [n] service instances', fontsize=8)
 
         ax.legend(patches, labels)
         ax.set_yscale('log')
-        plt.xlabel('n_clients')
-        plt.ylabel('rate (\\#req/s)')
-        fig.savefig('scaling_%s.png' % plot_filter, bbox_inches='tight')
+        plt.xlabel('n_tasks')
+        plt.ylabel('rate (\\#inferences / sec)')
+        fig.savefig('scaling_%s.pdf' % plot_filter, bbox_inches='tight')
 
 
         if plot_filter in ['noop']:
@@ -210,8 +211,8 @@ def plot_scaling():
 
             ax2.legend()
             ax2.set_yscale('log')
-            plt.xlabel('n_clients')
-            plt.ylabel('rate (\\#req/s)')
+            plt.xlabel('n_tasks')
+            plt.ylabel('rate (\\#inferences / sec)')
             fig2.savefig('weak_scaling_%s.png' % plot_filter, bbox_inches='tight')
 
 
@@ -240,12 +241,12 @@ def plot_scaling():
 
             title = 'strong scaling (%s)' % plot_filter
             plt.suptitle(title, y=1.02, fontsize=12)
-            plt.title('n_services == n_clients', fontsize=8)
+            plt.title('n_services == n_tasks', fontsize=8)
 
             ax3.legend()
             ax3.set_yscale('log')
-            plt.xlabel('n_clients')
-            plt.ylabel('rate (\\#req/s)')
+            plt.xlabel('n_tasks')
+            plt.ylabel('rate (\\#inferences / sec)')
             fig3.savefig('strong_scaling_%s.png' % plot_filter, bbox_inches='tight')
 
 
