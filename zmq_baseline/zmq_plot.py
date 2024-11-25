@@ -107,7 +107,7 @@ def plot_scaling():
     for plot_filter in ['noop', 'llama', 'local', 'remote']:
 
         bundles   = defaultdict(dict)
-        fig, ax   = plt.subplots(figsize = ra.get_plotsize(300))
+        fig, ax   = plt.subplots(figsize = ra.get_plotsize(200))
         patches   = list()
         labels    = list()
         annotated = None
@@ -169,9 +169,15 @@ def plot_scaling():
       # plt.title('one line per [n] service instances', fontsize=8)
 
         ax.legend(patches, labels)
+        ax.set_xscale('log')
+        ax.set_xticks(ticks=[1, 2, 4, 8, 16],
+                      labels=[1, 2, 4, 8, 16],
+                      fontsize=10)
         ax.set_yscale('log')
-        plt.xlabel('n_tasks')
-        plt.ylabel('rate (\\#inferences / sec)')
+        ax.set_yticks([0.1, 1, 10], [0.1, 1, 10], fontsize=10)
+        plt.ylim([0.1, 10])
+        plt.xlabel('n_tasks', fontsize=10)
+        plt.ylabel('rate (\\#inferences / sec)', fontsize=10)
         fig.savefig('scaling_%s.pdf' % plot_filter, bbox_inches='tight')
 
 
