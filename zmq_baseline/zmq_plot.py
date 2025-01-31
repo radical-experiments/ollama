@@ -46,8 +46,16 @@ def plot_rates(src):
     stype   = 'radical'
     session = ra.Session.create(src, stype)
 
+    t_start = session.t_start
+    t_stop  = session.t_stop
+    print(t_start, t_stop)
+    for entity in session.get():
+        for event in entity.events:
+            print(event)
+            event[ru.TIME] -= t_start
+
     # FIXME: adaptive sampling (100 bins over range?)
-    data = {metric: session.rate(event=metrics[metric], sampling=4.0)
+    data = {metric: session.rate(event=metrics[metric], sampling=1.0)
             for metric in metrics}
 
     fig, ax = plt.subplots(figsize=ra.get_plotsize(500))
@@ -262,7 +270,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) > 1:
         for src in sys.argv[1:]:
-            print(src)
+            print('---->', src)
             plot_rates(src)
 
     else:

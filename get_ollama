@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # download the Ollama binary from the official website and installs it in the
 # current directory.
@@ -6,7 +6,8 @@
 TGT=$1
 test -z $1 && TGT="."
 mkdir -p $TGT
-tgt=$TGT/ollama
+tgt=$TGT/ollama.tgz
+bin=bin/ollama
 
 ARCH=$(uname -m)
 case "$ARCH" in
@@ -18,35 +19,36 @@ case "$ARCH" in
         ;;
 esac
 
-if test -f $tgt.md5
-then
-    md5=$(md5sum $tgt)
-    if test "$md5" = "$(cat $tgt.md5)"
-    then
-        echo "Ollama is already installed."
-        exit 0
-    fi
+if test -f $bin; then
+    echo "Ollama is already installed."
+    exit 1
 fi
 
-test -f $tgt && cont='-C -' || cont=''
+if test -f $tgt; then
+    echo "Ollama download already started."
+    cont='-C -' || cont=''
+else
+    echo "Downloading Ollama..."
+    cont=''
+fi
 
 curl --fail $cont --show-error --location --progress-bar -o $tgt \
-    "https://ollama.com/download/ollama-linux-${ARCH}"
+    "https://ollama.com/download/ollama-linux-${ARCH}.tgz"
+tar xvf "$tgt"
 
 chmod +x $tgt
-V=$($tgt --version)
+V=$($bin --version 2>&1)
 
 if ! test -z $V; then
-    md5sum $tgt > $tgt.md5
     echo "Ollama $V has been installed successfully."
     echo "for available models, check https://ollama.com/library"
-    echo "run `$tgt start` to start the server (in a separate shell)."
-    echo "run `$tgt pull <model>` to download a model."
-    echo "run `$tgt run <model>` to run a model."
+    echo "run `$bin start` to start the server (in a separate shell)."
+    echo "run `$bin pull <model>` to download a model."
+    echo "run `$bin run <model>` to run a model."
 
     exit 1
 else
-    echo "Failed to install Ollama."
+    echo "Failed to install Ollama ($V)."
     exit 1
 fi
 

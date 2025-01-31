@@ -13,11 +13,11 @@ import radical.utils as ru
 
 
 sid          = os.environ.get('SID')
-n_nodes      = int(os.environ.get('N_NODES',        1))
-n_services   = int(os.environ.get('ZMQ_SERVICES',   1))
-n_clients    = int(os.environ.get('ZMQ_CLIENTS',    1))
-r_per_client = int(os.environ.get('ZMQ_REQUESTS',   1))
-r_delay      = float(os.environ.get('ZMQ_DELAY_MS', 0)) / 1000
+n_nodes      = int(os.environ.get('N_NODES',         1))
+n_services   = int(os.environ.get('ZMQ_SERVICES',    1))
+n_clients    = int(os.environ.get('ZMQ_CLIENTS',     1))
+r_per_client = int(os.environ.get('ZMQ_REQUESTS',    1))
+r_delay      = float(os.environ.get('ZMQ_DELAY_MS', -1)) / 1000
 
 
 # ------------------------------------------------------------------------------
@@ -64,7 +64,6 @@ def app():
                 info[uid] = url
 
 
-
         # ---------------------------------------------------------------------
         # run clients
         cds = list()
@@ -98,8 +97,11 @@ def service(port):
 
     if use_traces:
 
-        if r_delay:
-            seed = iter([r_delay])
+        if r_delay >= 0.0:
+            def const_gen():
+                while True:
+                    yield r_delay
+            seed = const_gen()
         else:
             def get_seed():
                 rgen  = np.random.default_rng()
@@ -116,7 +118,7 @@ def service(port):
                   'stream' : False,
                   'content': 'echo "Hello, World!"'}
 
-    def hello(arg: str) -> str:
+    def hello(arg: str, *args, **kwargs) -> str:
 
         prof.prof('hello_start', uid=uid)
 
@@ -132,7 +134,7 @@ def service(port):
         prof.prof('hello_stop',  uid=uid)
         return ret
 
-    serv = ru.zmq.Server(url='tcp://*:%d' % int(port))
+    serv = ru.zmq.Server(url='tcp://*:%d' % int(port), prof=prof)
     serv.register_request('hello', hello)
     serv.start()
 
@@ -153,7 +155,7 @@ def client(url):
     for i in range(r_per_client):
         rid = 'reg.%s.%08d' % (uid, i)
         prof.prof('request_start', uid=rid, msg=i)
-        rep = cli.request(cmd='hello', arg='world %d' % i)
+        rep = cli.request(cmd='hello', arg='world %d' % i, uid=rid)
         prof.prof('request_stop', uid=rid, msg=rep)
 
 
