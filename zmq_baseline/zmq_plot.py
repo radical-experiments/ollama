@@ -51,7 +51,6 @@ def plot_rates(src):
     print(t_start, t_stop)
     for entity in session.get():
         for event in entity.events:
-            print(event)
             event[ru.TIME] -= t_start
 
     # FIXME: adaptive sampling (100 bins over range?)

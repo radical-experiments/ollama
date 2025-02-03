@@ -33,7 +33,7 @@ echo "$XFILE"
 if ! test -f $XFILE; then
     echo "plot ----------------------------------------------------------------"
     ./zmq_plot.py $PFILE
-    sxiv $XFILE &
+  # sxiv $XFILE &
     ls -la $PFILE $XFILE
     echo "sid $SID"
 fi
