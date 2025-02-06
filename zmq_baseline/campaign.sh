@@ -1,3 +1,4 @@
+#!/bin/sh
 
 mkdir -p $CAMPAIGN
 
@@ -10,32 +11,41 @@ echo "====================================================================="
 echo "sid $SID"
 # skip if xfile exists
 if ! test -f $PFILE; then
-  # rp_kill
-    killall python3 > /dev/null 2>&1
+  # bash -il -c 'rp_kill'
+    killall python3
     rm -rf *.log rp.session.*
 
     # make install-ve
     echo "run ------------------------------------------------------------------"
     echo "sid $SID"
 
-    ./zmq_prof.py > /dev/null 2>&1
+    ./zmq_prof.py   # > /dev/null 2>&1
     rm *.log
 
     for f in $(find rp.session.* -name radical.zmq.prof); do
         echo "===> $f"
+        grep -c request_start $f
+        grep -c request_stop  $f
     done
-    find rp.session.* -name radical.zmq.prof | xargs cat | sort -un > $PFILE
+    find rp.session.* -name radical.zmq.prof | xargs cat | sort -u >> $PFILE
     wc -l $PFILE
+    grep -c request_start $PFILE
+    grep -c request_stop  $PFILE
 
+    exit
 fi
 
-echo "$XFILE"
-if ! test -f $XFILE; then
-    echo "plot ----------------------------------------------------------------"
-    ./zmq_plot.py $PFILE
-  # sxiv $XFILE &
-    ls -la $PFILE $XFILE
-    echo "sid $SID"
-fi
-echo "====================================================================="
+# bash -il -c 'rp_kill'
+killall python3
+rm -rf *.log rp.session.*
+
+# echo "$XFILE"
+# if ! test -f $XFILE; then
+#     echo "plot ----------------------------------------------------------------"
+#     ./zmq_plot.py $PFILE
+#   # sxiv $XFILE &
+#     ls -la $PFILE $XFILE
+#     echo "sid $SID"
+# fi
+# echo "====================================================================="
 

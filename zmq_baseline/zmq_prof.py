@@ -22,6 +22,13 @@ r_delay      = float(os.environ.get('ZMQ_DELAY_MS', -1)) / 1000
 
 # ------------------------------------------------------------------------------
 #
+def rand(center, sigma):
+
+    return max(0, random.gauss(center, sigma))
+
+
+# ------------------------------------------------------------------------------
+#
 def app():
 
     session = rp.Session()
@@ -36,7 +43,8 @@ def app():
 
         info = dict()
 
-        if 'local' in sid:
+      # if 'local' in sid:
+        if True:
 
             # run service tasks
             sds = list()
@@ -54,14 +62,14 @@ def app():
                 info[serv.uid] = serv.wait_info()
                 print(' * %s: %s' % (serv.uid, info[serv.uid]))
 
-        elif 'remote' in sid:
-
-            # use remote services
-            for i in range(n_services):
-                uid = 'zmq_service.%04d' % i
-                port = 10001 + i
-                url  = 'tcp://95.217.193.116:%d' % port
-                info[uid] = url
+      # elif 'remote' in sid:
+      #
+      #     # use remote services
+      #     for i in range(n_services):
+      #         uid = 'zmq_service.%04d' % i
+      #         port = 10001 + i
+      #         url  = 'tcp://95.217.193.116:%d' % port
+      #         info[uid] = url
 
 
         # ---------------------------------------------------------------------
@@ -87,7 +95,7 @@ def app():
 #
 def service(port):
 
-    use_traces = True
+    use_traces = bool(r_delay < 0)
 
     uid  = os.environ.get('RP_TASK_ID')
     url  = os.environ.get('OLLAMA_URL')
@@ -95,40 +103,35 @@ def service(port):
 
     assert uid, 'must run as RP task'
 
-    if use_traces:
+    oll_ep = None
+    prompt = None
 
-        if r_delay >= 0.0:
-            def const_gen():
-                while True:
-                    yield r_delay
-            seed = const_gen()
-        else:
-            def get_seed():
-                rgen  = np.random.default_rng()
-                seeds = rgen.normal(4.44, 0.55, size=5_000)
-                while True:
-                    seed = max(random.choice(seeds), 2.22)
-                    yield float(seed)
-            seed = get_seed()
+    print(use_traces, r_delay)
 
-    else:
+    if not use_traces:
 
         oll_ep = ollama.Client(host=url)
         prompt = {'role'   : 'user',
                   'stream' : False,
                   'content': 'echo "Hello, World!"'}
+        oll_ep = None
+
 
     def hello(arg: str, *args, **kwargs) -> str:
-
         prof.prof('hello_start', uid=uid)
 
-        if use_traces:
-            delay = next(seed)
-            time.sleep(delay)
-        else:
+        if oll_ep:
             start = time.time()
             oll_ep.chat(model='llama-8b', messages=[prompt])
             delay = time.time() - start
+
+        else:
+            if r_delay > 0:
+                time.sleep(r_delay)
+                delay = r_delay
+            else:
+                delay = rand(4.44, 0.55)
+                time.sleep(delay)
 
         ret = 'hello %s: %7.2f' % (arg, delay)
         prof.prof('hello_stop',  uid=uid)
@@ -142,6 +145,7 @@ def service(port):
     sys.stdout.flush()
 
     serv.wait()
+    prof.close()
 
 
 # ------------------------------------------------------------------------------
@@ -155,8 +159,14 @@ def client(url):
     for i in range(r_per_client):
         rid = 'reg.%s.%08d' % (uid, i)
         prof.prof('request_start', uid=rid, msg=i)
+      # time.sleep(rand(0.047, 0.040) / 2)
+
         rep = cli.request(cmd='hello', arg='world %d' % i, uid=rid)
+
+      # time.sleep(rand(0.047, 0.040) / 2)
         prof.prof('request_stop', uid=rid, msg=rep)
+
+    prof.close()
 
 
 # ------------------------------------------------------------------------------
